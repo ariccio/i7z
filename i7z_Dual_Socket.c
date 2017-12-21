@@ -186,6 +186,8 @@ void print_i7z_socket(struct cpu_socket_info socket_0, int printw_offset, int PL
         RETURN_IF_TRUE(online_cpus[0]==-1);
 
         int IA32_FIXED_CTR_CTL = 909;	//38D
+
+        //FIXME: why isn't this value actually used??
         int IA32_FIXED_CTR_CTL_Value = get_msr_value (CPU_NUM, IA32_FIXED_CTR_CTL, 63, 0, &error_indx);
         SET_IF_TRUE(error_indx,online_cpus[0],-1);
         RETURN_IF_TRUE(online_cpus[0]==-1);
@@ -661,6 +663,7 @@ void print_i7z ()
     //int *core_list, core_list_size_phy, core_list_size_log;
 
     //iterator
+    //FIXME: why isn't this value actually used??
     int i;
 
     //turbo_mode enabled/disabled flag
@@ -705,6 +708,7 @@ void print_i7z ()
     TURBO_MODE = turbo_status ();
 
     //Flags and other things about HT.
+    //FIXME: why isn't this value actually used??
     int HT_ON;
     char HT_ON_str[30];
 

@@ -166,6 +166,7 @@ void print_CPU_Heirarchy(struct cpu_heirarchy_info chi);
 int in_core_list(int ii,int* core_list);
 void Print_Version_Information();
 bool file_exists(char*);
+void call_system(const char* cmd);
 
 #define SET_ONLINE_ARRAY_MINUS1(online_cpus) {int iii;for(iii=0;iii<MAX_PROCESSORS;iii++) online_cpus[iii]=-1;}
 #define SET_ONLINE_ARRAY_PLUS1(online_cpus) {int iii;for(iii=0;iii<MAX_PROCESSORS;iii++) online_cpus[iii]=1;}

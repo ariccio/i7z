@@ -114,7 +114,7 @@ static inline void cpuid (unsigned int info, unsigned int *eax, unsigned int *eb
     if (edx) *edx = _edx;
 }
 
-static inline void  get_vendor (char *vendor_string)
+static inline void  get_vendor (char vendor_string[static 13])
 {
     //get vendor name
     unsigned int a, b, c, d;
@@ -166,7 +166,7 @@ double estimate_MHz ()
     *
     */
     struct timezone tz;
-    struct timeval tvstart, tvstop;
+    struct timeval tvstart = {0}, tvstop = {0};
     unsigned long long int cycles[2];		/* must be 64 bit */
     unsigned long long int microseconds;	/* total time taken */
 
@@ -242,7 +242,7 @@ uint64_t get_msr_value (int cpu, uint32_t reg, unsigned int highbit,
     int bits;
     *error_indx =0;
 
-    sprintf (msr_file_name, "/dev/cpu/%d/msr", cpu);
+    snprintf (msr_file_name, 64, "/dev/cpu/%d/msr", cpu);
     fd = open (msr_file_name, O_RDONLY);
     if (fd < 0)
     {
@@ -295,7 +295,7 @@ uint64_t set_msr_value (int cpu, uint32_t reg, uint64_t data)
     int fd;
     char msr_file_name[64];
 
-    sprintf (msr_file_name, "/dev/cpu/%d/msr", cpu);
+    snprintf (msr_file_name, 64, "/dev/cpu/%d/msr", cpu);
     fd = open (msr_file_name, O_WRONLY);
     if (fd < 0)
     {
@@ -369,7 +369,7 @@ void Print_Information_Processor(bool* nehalem, bool* sandy_bridge, bool* ivy_br
     */
     // somehow using strcmp or strncmp is crashing the app when using -O2, -O3 with gcc-4.7
     // (strncmp (vendor_string, "GenuineIntel",12) == 0)
-    // (strcmp (vendor_string, "GenuineIntel",12) == 0)
+    // (strcmp (vendor_string, "GenuineIntwel",12) == 0)
 
     if (strcmp (vendor_string, "GenuineIntel") == 0) {
     //if (equal_string) {
@@ -524,7 +524,7 @@ void Test_Or_Make_MSR_DEVICE_FILES()
         {
             //Try the Makedev script
             //sourced from MAKEDEV-cpuid-msr script in msr-tools
-            system ("msr_major=202; \
+            call_system ("msr_major=202; \
 							cpuid_major=203; \
 							n=0; \
 							while [ $n -lt 16 ]; do \
@@ -535,7 +535,7 @@ void Test_Or_Make_MSR_DEVICE_FILES()
 							done; \
 							");
             printf ("i7z DEBUG: modprobbing for msr\n");
-            system ("modprobe msr");
+            call_system ("modprobe msr");
         } else {
             printf ("i7z DEBUG: You DO NOT have root privileges, mknod to create device entries won't work out\n");
             printf ("i7z DEBUG: A solution is to run this program as root\n");
@@ -548,16 +548,22 @@ double cpufreq_info()
     //CPUINFO is wrong for i7 but correct for the number of physical and logical cores present
     //If Hyperthreading is enabled then, multiple logical processors will share a common CORE ID
     //http://www.redhat.com/magazine/022aug06/departments/tips_tricks/
-    system
+    call_system
     ("cat /proc/cpuinfo |grep MHz|sed 's/cpu\\sMHz\\s*:\\s//'|tail -n 1 > /tmp/cpufreq.txt");
 
-
     //Open the parsed cpufreq file and obtain the cpufreq from /proc/cpuinfo
-    FILE *tmp_file;
-    tmp_file = fopen ("/tmp/cpufreq.txt", "r");
-    char tmp_str[30];
-    fgets (tmp_str, 30, tmp_file);
+    FILE *tmp_file = fopen ("/tmp/cpufreq.txt", "r");
+    if(!tmp_file){
+        fprintf(stderr, "fopen /tmp/cpufreq.txt failed!\nerrno: %s\n", strerror(errno));
+    }
+    
+    //zero initialize to prevent atof reading junk
+    char tmp_str[30] = {0};
+    const char *const fget_result = fgets (tmp_str, 30, tmp_file);
     fclose (tmp_file);
+    if(!fget_result){
+        fprintf(stderr, "fgets /tmp/cpufreq.txt failed!\n");
+    }
     return atof(tmp_str);
 }
 
@@ -680,7 +686,7 @@ void print_socket_information(struct cpu_socket_info* socket)
     for (i=0;i< socket->max_cpu ;i++) {
         assert(i < MAX_SK_PROCESSORS);
         if (socket->processor_num[i]!=-1) {
-            sprintf(socket_list,"%s%d,",socket_list,socket->processor_num[i]);
+            snprintf(socket_list, 200,"%s%d,",socket_list,socket->processor_num[i]);
         }
     }
     printf("Socket-%d [num of cpus %d physical %d logical %d] %s\n",socket->socket_num,socket->max_cpu,socket->num_physical_cores,socket->num_logical_cores,socket_list);

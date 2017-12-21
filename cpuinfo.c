@@ -141,7 +141,7 @@ void print_socket_information(struct cpu_socket_info* socket)
     for (i=0;i< socket->max_cpu ;i++) {
         assert(i < MAX_SK_PROCESSORS);
         if (socket->processor_num[i]!=-1) {
-            sprintf(socket_list,"%s%d,",socket_list,socket->processor_num[i]);
+            snprintf(socket_list, 200, "%s%d,",socket_list,socket->processor_num[i]);
         }
     }
     printf("Socket-%d [num of cpus %d physical %d logical %d] %s\n",socket->socket_num,socket->max_cpu,socket->num_physical_cores,socket->num_logical_cores,socket_list);

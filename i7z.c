@@ -184,11 +184,11 @@ void logCpuFreq_single_ts(struct timespec  *value) //HW use timespec to avoid fl
 {
     //below when just logging
     if(prog_options.logging==1) {
-        fprintf(fp_log_file_freq,"%d.%.9d\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+        fprintf(fp_log_file_freq,"%ld.%.9ld\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
     }
     //below when appending
     if(prog_options.logging==2) {
-        fprintf(fp_log_file_freq,"%d.%.9d\t",value->tv_sec,value->tv_nsec);
+        fprintf(fp_log_file_freq,"%ld.%.9ld\t",value->tv_sec,value->tv_nsec);
     }
 }
 
@@ -264,20 +264,20 @@ void logCpuFreq_dual_ts(struct timespec  *value, int socket_num) //HW use timesp
     if(socket_num==0){
         //below when just logging
         if(prog_options.logging==1)
-            fprintf(fp_log_file_freq_1,"%d.%.9d\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+            fprintf(fp_log_file_freq_1,"%ld.%.9ld\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
 
         //below when appending
         if(prog_options.logging==2)
-             fprintf(fp_log_file_freq_1,"%d.%.9d\t",value->tv_sec,value->tv_nsec);
+             fprintf(fp_log_file_freq_1,"%ld.%.9ld\t",value->tv_sec,value->tv_nsec);
     }
     if(socket_num==1){
         //below when just logging
         if(prog_options.logging==1)
-            fprintf(fp_log_file_freq_2,"%d.%.9d\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+            fprintf(fp_log_file_freq_2,"%ld.%.9ld\n",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
 
         //below when appending
         if(prog_options.logging==2)
-             fprintf(fp_log_file_freq_2,"%d.%.9d\t",value->tv_sec,value->tv_nsec);
+             fprintf(fp_log_file_freq_2,"%ld.%.9ld\t",value->tv_sec,value->tv_nsec);
     }
 }
 
@@ -315,7 +315,7 @@ void logCpuCstates_single_ts(struct timespec  *value) //HW use timespec to avoid
 {
     //below when just logging
     if(prog_options.logging != 0) {
-        fprintf(fp_log_file_Cstates,"%d.%.9d",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+        fprintf(fp_log_file_Cstates,"%ld.%.9ld",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
     }
 }
 
@@ -366,27 +366,47 @@ void logCpuCstates_dual_ts(struct timespec  *value, int socket_num) //HW use tim
     if(socket_num==0){
         //below when just logging
         if(prog_options.logging != 0)
-            fprintf(fp_log_file_Cstates_1,"%d.%.9d",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+            fprintf(fp_log_file_Cstates_1,"%ld.%.9ld",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
     }
     if(socket_num==1){
         //below when just logging
         if(prog_options.logging != 0)
-            fprintf(fp_log_file_Cstates_2,"%d.%.9d",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
+            fprintf(fp_log_file_Cstates_2,"%ld.%.9ld",value->tv_sec,value->tv_nsec); //newline, replace \n with \t to get everything separated with tabs
     }
 }
 
-
+void call_system(const char* cmd)
+{
+    const int system_result = system(cmd);
+    //mkdir, mknod, return -1 on failure.
+    if(system_result == -1){
+        fprintf(stderr, "'%s' failed, it could not be created, or its status could not be retrieved. Result = -1\n", cmd);
+    }
+    else if(system_result == 127){
+        fprintf(stderr, "shell could not be executed for '%s'!. Result = 127\n", cmd);
+    }
+    //stty, modprobe, will only ever return EXIT_SUCCESS or EXIT_FAILURE.
+    else if(system_result == EXIT_FAILURE){
+        fprintf(stderr, "'%s' returned EXIT_FAILURE!\n", cmd);
+    }
+    //cat, tail, return values ">0" on failure.
+    //grep returns 1 if zero selected lines are found, and 2 if there's an error.
+    //sed can return 1, 2, and 4, on error
+    else if(system_result != EXIT_SUCCESS){
+        fprintf(stderr, "'%s' returned a non-zero value: %i\n", cmd, system_result);
+    }
+}
 
 
 void atexit_runsttysane()
 {
     printf("Quitting i7z\n");
-    system("stty sane");
+    call_system("stty sane");
 }
 
 void modprobing_msr()
 {
-    system("modprobe msr");
+    call_system("modprobe msr");
 }
 
 void init_ncurses()
@@ -468,7 +488,7 @@ int main (int argc, char **argv)
                 break;
             case 'l':
                 strncpy(log_file_name, optarg, MAX_FILENAME_LENGTH-3);
-                strcpy(log_file_name2, log_file_name);
+                strncpy(log_file_name2, log_file_name, MAX_FILENAME_LENGTH);
                 strcat(log_file_name2, "_%d");
                 CPU_FREQUENCY_LOGGING_FILE_single = log_file_name;
                 CPU_FREQUENCY_LOGGING_FILE_dual = log_file_name2;
